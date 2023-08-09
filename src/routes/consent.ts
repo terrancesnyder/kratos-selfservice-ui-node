@@ -34,6 +34,15 @@ async function createOAuth2ConsentRequestSession(
       // Client may check phone number of user
       id_token.phone = identity.traits["phone"] || ""
     }
+    if (grantScopes.indexOf("profile") > -1) {
+      id_token.given_name = identity.traits["name"]["first"] || ""
+      id_token.family_name = identity.traits["name"]["last"] || ""
+    }
+    if (grantScopes.indexOf("email") > -1) {
+      id_token.email = identity.traits["email"] || ""
+    }
+
+    // could do scopes[], roles[]
   }
 
   return {
