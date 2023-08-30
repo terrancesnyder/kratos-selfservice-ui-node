@@ -1,4 +1,4 @@
-import { gridStyle } from "@ory/elements-markup/dist/theme"
+import { gridStyle } from "@ory/elements-markup/dist/theme/grid.css"
 import { Button } from "@ory/elements-markup/dist/react-components/button"
 import { Card } from "@ory/elements-markup/dist/react-components/card"
 import { Typography } from "@ory/elements-markup/dist/react-components/typography"

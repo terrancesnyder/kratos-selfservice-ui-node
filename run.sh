@@ -1,3 +1,6 @@
+#!/bin/bash -e
+set -e -x
+
 export KRATOS_PUBLIC_URL=https://secure.woven-city.io/kratos
 export KRATOS_ADMIN_URL=https://kratos-admin.woven-city.io
 
