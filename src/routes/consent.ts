@@ -5,7 +5,9 @@ import {
   IdentityApi,
   OAuth2ConsentRequest,
 } from "@ory/client"
-import { UserConsentCard } from "@ory/elements-markup"
+// import { UserConsentCard } from "@ory/elements-markup"
+import { UserConsentCard, UserConsentScope } from "./consent_card"
+
 import bodyParser from "body-parser"
 import csrf from "csurf"
 import { defaultConfig, RouteCreator, RouteRegistrator } from "../pkg"
@@ -20,6 +22,7 @@ async function createOAuth2ConsentRequestSession(
   // The session allows us to set session data for id and access tokens
 
   const id_token: { [key: string]: any } = {}
+  const access_token: { [key: string]: any } = {}
 
   if (consentRequest.subject && grantScopes.length > 0) {
     const identity = (
@@ -28,18 +31,37 @@ async function createOAuth2ConsentRequestSession(
 
     if (grantScopes.indexOf("email") > -1) {
       // Client may check email of user
-      id_token.email = identity.traits["email"] || ""
+      access_token.email = id_token.email = identity.traits["email"] || ""
+      
     }
     if (grantScopes.indexOf("phone") > -1) {
       // Client may check phone number of user
-      id_token.phone = identity.traits["phone"] || ""
+      access_token.phone = id_token.phone = identity.traits["phone"] || ""
     }
     if (grantScopes.indexOf("profile") > -1) {
-      id_token.given_name = identity.traits["name"]["first"] || ""
-      id_token.family_name = identity.traits["name"]["last"] || ""
+      access_token.given_name = id_token.given_name = identity.traits["name"]["first"] || ""
+      access_token.family_name = id_token.family_name = identity.traits["name"]["last"] || ""
+      access_token.middle_name = id_token.middle_name = identity.traits["name"]["middle_name"] || ""
+      access_token.nickname = id_token.nickname = identity.traits["name"]["nickname"] || ""
+      access_token.preferred_username = id_token.preferred_username = identity.traits["name"]["preferred_username"] || ""
+      access_token.picture = id_token.picture = identity.traits["picture"] || ""
+      access_token.website = id_token.website = identity.traits["website"] || ""
+      access_token.gender = id_token.gender = identity.traits["gender"] || ""
+      access_token.birthdate = id_token.birthdate = identity.traits["birthdate"] || ""
+      access_token.zoneinfo = id_token.zoneinfo = identity.traits["zoneinfo"] || ""
+      access_token.locale = id_token.locale = identity.traits["locale"] || ""
+      access_token.updated_at = id_token.updated_at = identity.traits["updated_at"] || ""
     }
     if (grantScopes.indexOf("email") > -1) {
-      id_token.email = identity.traits["email"] || ""
+      access_token.email = id_token.email = identity.traits["email"] || ""
+    }
+
+    if (grantScopes.indexOf("address") > -1) {
+      access_token.address = id_token.address = identity.traits["address"] || ""
+    }
+
+    if (grantScopes.indexOf("address") > -1) {
+      access_token.address = id_token.address = identity.traits["address"] || ""
     }
 
     // could do scopes[], roles[]
@@ -48,9 +70,7 @@ async function createOAuth2ConsentRequestSession(
   return {
     // This data will be available when introspecting the token. Try to avoid sensitive information here,
     // unless you limit who can introspect tokens.
-    access_token: {
-      // foo: 'bar'
-    },
+    access_token,
 
     // This data will be available in the ID token.
     id_token,
@@ -131,6 +151,26 @@ export const createConsentRoute: RouteCreator =
             })
         }
 
+        // check if client sent cookie which had previous consent saved for this
+        // user for this specific client
+        
+        let scopes: { id: string; label: string; checked: boolean }[] = [];
+        if (body.client?.client_id != null) {
+
+          var prior_consent_grants = req.cookies['consent_' + body.client?.client_id];
+          if (prior_consent_grants != undefined) {
+            const previous_scopes = new Set(prior_consent_grants.split(','));
+            body.requested_scope?.forEach(x => {
+              let id = x.trim();
+              scopes.push({
+                id: id,
+                label: id,  // TODO get nicer name and i18n translation
+                checked: previous_scopes.has(id)
+              });
+            });
+          }
+        }
+
         // If consent can't be skipped we MUST show the consent UI.
         res.render("consent", {
           card: UserConsentCard({
@@ -138,7 +178,7 @@ export const createConsentRoute: RouteCreator =
             csrfToken: req.csrfToken(),
             cardImage: body.client?.logo_uri || "/ory-logo.svg",
             client_name: body.client?.client_name || "unknown client",
-            requested_scope: body.requested_scope,
+            requested_scope: scopes, //body.requested_scope,
             client: body.client,
             action: (process.env.BASE_URL || "") + "/consent",
           }),
@@ -180,6 +220,8 @@ export const createConsentPostRoute: RouteCreator =
     if (!Array.isArray(grantScope)) {
       grantScope = [grantScope]
     }
+
+    // split these up
 
     // Here is also the place to add data to the ID or access token. For example,
     // if the scope 'profile' is added, add the family and given name to the ID Token claims:
