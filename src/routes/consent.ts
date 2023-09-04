@@ -5,14 +5,96 @@ import {
   IdentityApi,
   OAuth2ConsentRequest,
 } from "@ory/client"
+
+import { UserConsentCard, UserConsentScope } from "@ory/elements-markup"
 // import { UserConsentCard } from "@ory/elements-markup"
-import { UserConsentCard, UserConsentScope } from "./consent_card"
 
 import bodyParser from "body-parser"
 import csrf from "csurf"
 import { defaultConfig, RouteCreator, RouteRegistrator } from "../pkg"
 import { register404Route } from "./404"
 import { oidcConformityMaybeFakeSession } from "./stub/oidc-cert"
+import { describe } from "node:test"
+import { emit } from "node:process"
+
+type ConsentScopeDefinition = {
+  label: string
+  description?: string
+  hidden?: boolean
+}
+
+function lookupConsentScopeDefinition(id: string) : ConsentScopeDefinition {
+
+  if (id == "email") {
+    return {
+      label: "Email Address",
+      description: "Your current email address."
+    }
+  }
+
+  if (id == "profile") {
+    return {
+      label: "Profile",
+      description: "Your name, avatar and email address."
+    }
+  }
+
+  if (id == "location.history.read") {
+    return {
+      label: "Location History",
+      description: "Limited access to your location history."
+    }
+  }
+
+  if (id == "fitness.activity.read") {
+    return {
+      label: "Fitness / Read Activities",
+      description: "Read your fitness activity"
+    }
+  }
+
+  if (id == "fitness.activity.write") {
+    return {
+      label: "Fitness / Record Activity",
+      description: "Update and record new or modify existing fitness activities."
+    }
+  }
+
+  if (id == "fitness.heatrate.read") {
+    return {
+      label: "Fitness / Heartrate",
+      description: "Analysis of your heartrate information."
+    }
+  }
+
+  if (id == "address") {
+    return {
+      label: "Address",
+      description: "Your primary home address."
+    }
+  }
+
+  if (id == "openid") {
+    return {
+      label: "ID",
+      description: "Your unique identifier.",
+      hidden: true
+    }
+  }
+
+  if (id == "offline") {
+    return {
+      label: "Offline Access",
+      description: "Enable this application to access your information offline."
+    }
+  }
+
+  return {
+    label: id,
+    description: "No description available"
+  };
+
+}
 
 async function createOAuth2ConsentRequestSession(
   grantScopes: string[],
@@ -51,13 +133,10 @@ async function createOAuth2ConsentRequestSession(
       access_token.zoneinfo = id_token.zoneinfo = identity.traits["zoneinfo"] || ""
       access_token.locale = id_token.locale = identity.traits["locale"] || ""
       access_token.updated_at = id_token.updated_at = identity.traits["updated_at"] || ""
+      access_token.email = id_token.email = identity.traits["email"] || ""
     }
     if (grantScopes.indexOf("email") > -1) {
       access_token.email = id_token.email = identity.traits["email"] || ""
-    }
-
-    if (grantScopes.indexOf("address") > -1) {
-      access_token.address = id_token.address = identity.traits["address"] || ""
     }
 
     if (grantScopes.indexOf("address") > -1) {
@@ -80,7 +159,6 @@ async function createOAuth2ConsentRequestSession(
 // A simple express handler that shows the Hydra consent screen.
 export const createConsentRoute: RouteCreator =
   (createHelpers) => (req, res, next) => {
-    console.log("createConsentRoute")
     res.locals.projectName = "An application requests access to your data!"
 
     const { oauth2, identity } = createHelpers(req, res)
@@ -100,7 +178,6 @@ export const createConsentRoute: RouteCreator =
       trustedClients = String(process.env.TRUSTED_CLIENT_IDS).split(",")
     }
 
-    console.log("getOAuth2ConsentRequest", challenge)
     // This section processes consent requests and either shows the consent UI or
     // accepts the consent request right away if the user has given consent to this
     // app before
@@ -108,6 +185,12 @@ export const createConsentRoute: RouteCreator =
       .getOAuth2ConsentRequest({ consentChallenge: challenge })
       // This will be called if the HTTP request was successful
       .then(async ({ data: body }) => {
+        
+        var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
+        var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
+        console.log('Cookie: ' + persist_consent_cookie_id);
+        console.log('Prior Grants: [' + prior_consent_grants + ']');
+
         // If a user has granted this application the requested scope, hydra will tell us to not show the UI.
         if (
           body.skip ||
@@ -122,6 +205,7 @@ export const createConsentRoute: RouteCreator =
           if (!Array.isArray(grantScope)) {
             grantScope = [grantScope]
           }
+
           const session = await createOAuth2ConsentRequestSession(
             grantScope,
             body,
@@ -146,30 +230,63 @@ export const createConsentRoute: RouteCreator =
               },
             })
             .then(({ data: body }) => {
+              console.log('Setting Cookie: ' + persist_consent_cookie_id + ' to ' + grantScope.join(','));
               // All we need to do now is to redirect the user back to hydra!
-              res.redirect(String(body.redirect_to))
+              res.cookie(persist_consent_cookie_id, grantScope.join(','))
+                 .redirect(String(body.redirect_to))
             })
         }
 
-        // check if client sent cookie which had previous consent saved for this
-        // user for this specific client
-        
-        let scopes: { id: string; label: string; checked: boolean }[] = [];
+        let scopes: UserConsentScope[] = [];
         if (body.client?.client_id != null) {
-
-          var prior_consent_grants = req.cookies['consent_' + body.client?.client_id];
           if (prior_consent_grants != undefined) {
-            const previous_scopes = new Set(prior_consent_grants.split(','));
+
+            const previous_scopes = new Set<string>(prior_consent_grants.split(','));
+
+            // requested scope and items from before just to keep state 
+            // and keep the client clean
+            body.requested_scope = body.requested_scope ?? [];
+            previous_scopes.forEach(x => {
+              if (body.requested_scope!.indexOf(x) < 0) {
+                // requested scope add more
+                body.requested_scope?.push(x);
+              }
+            });
+
+            // check and see what was previously added
             body.requested_scope?.forEach(x => {
               let id = x.trim();
               scopes.push({
                 id: id,
-                label: id,  // TODO get nicer name and i18n translation
-                checked: previous_scopes.has(id)
+                label: lookupConsentScopeDefinition(id).label,  // TODO get nicer name and i18n translation
+                checked: previous_scopes.has(id),
+                defaultChecked: previous_scopes.has(id),
+                disabled: false,
+                previousChecked: previous_scopes.has(id),
+                description: lookupConsentScopeDefinition(id).description,
+                hidden: lookupConsentScopeDefinition(id).hidden
               });
             });
+          } else {
+            body.requested_scope?.forEach(x => {
+              let id = x.trim();
+              scopes.push({
+                id: id,
+                label: lookupConsentScopeDefinition(id).label,  // TODO get nicer name and i18n translation
+                checked: false,
+                defaultChecked: false,
+                disabled: false,
+                previousChecked: false,
+                description: lookupConsentScopeDefinition(id).description,
+                hidden: lookupConsentScopeDefinition(id).hidden
+              });
+            });            
           }
         }
+
+        console.log('------------');
+        console.log(scopes);
+        console.log('------------');
 
         // If consent can't be skipped we MUST show the consent UI.
         res.render("consent", {
@@ -178,7 +295,8 @@ export const createConsentRoute: RouteCreator =
             csrfToken: req.csrfToken(),
             cardImage: body.client?.logo_uri || "/ory-logo.svg",
             client_name: body.client?.client_name || "unknown client",
-            requested_scope: scopes, //body.requested_scope,
+            requested_scope: [],//body.requested_scope,
+            scopes: scopes,
             client: body.client,
             action: (process.env.BASE_URL || "") + "/consent",
           }),
@@ -208,6 +326,7 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
+            console.log('Rejected');
             // All we need to do now is to redirect the browser back to hydra!
             res.redirect(String(body.redirect_to))
           })
@@ -240,6 +359,12 @@ export const createConsentPostRoute: RouteCreator =
           body,
           identity,
         )
+
+        var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
+        var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
+        console.log('Cookie: ' + persist_consent_cookie_id);
+        console.log('Prior: [' + prior_consent_grants + ']');
+
         return oauth2
           .acceptOAuth2ConsentRequest({
             consentChallenge: challenge,
@@ -274,8 +399,11 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
-            // All we need to do now is to redirect the user back!
-            res.redirect(String(body.redirect_to))
+            console.log('[2] Setting Cookie: ' + persist_consent_cookie_id + ' to ' + grantScope.join(','));
+            // All we need to do now is to redirect the user back to hydra!
+            res.cookie(persist_consent_cookie_id, grantScope.join(','))
+              // All we need to do now is to redirect the user back!
+              .redirect(String(body.redirect_to))
           })
       })
       .catch(next)
@@ -295,7 +423,6 @@ export const registerConsentRoute: RouteRegistrator = function (
   createHelpers = defaultConfig,
 ) {
   if (process.env.HYDRA_ADMIN_URL) {
-    console.log("found HYDRA_ADMIN_URL")
     return app.get(
       "/consent",
       csrfProtection,

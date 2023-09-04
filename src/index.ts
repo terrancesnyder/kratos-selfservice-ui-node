@@ -29,7 +29,7 @@ const baseUrl = process.env.BASE_PATH || "/"
 const app = express()
 const router = express.Router()
 
-app.use(middlewareLogger)
+// app.use(middlewareLogger)
 app.use(cookieParser())
 app.set("view engine", "hbs")
 
