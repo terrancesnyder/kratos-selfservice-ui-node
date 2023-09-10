@@ -188,8 +188,6 @@ export const createConsentRoute: RouteCreator =
         
         var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
         var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
-        console.log('Cookie: ' + persist_consent_cookie_id);
-        console.log('Prior Grants: [' + prior_consent_grants + ']');
 
         // If a user has granted this application the requested scope, hydra will tell us to not show the UI.
         if (
@@ -230,7 +228,6 @@ export const createConsentRoute: RouteCreator =
               },
             })
             .then(({ data: body }) => {
-              console.log('Setting Cookie: ' + persist_consent_cookie_id + ' to ' + grantScope.join(','));
               // All we need to do now is to redirect the user back to hydra!
               res.cookie(persist_consent_cookie_id, grantScope.join(','))
                  .redirect(String(body.redirect_to))
@@ -321,7 +318,6 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
-            console.log('Rejected');
             // All we need to do now is to redirect the browser back to hydra!
             res.redirect(String(body.redirect_to))
           })
@@ -357,8 +353,6 @@ export const createConsentPostRoute: RouteCreator =
 
         var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
         var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
-        console.log('Cookie: ' + persist_consent_cookie_id);
-        console.log('Prior: [' + prior_consent_grants + ']');
 
         return oauth2
           .acceptOAuth2ConsentRequest({
@@ -394,7 +388,6 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
-            console.log('[2] Setting Cookie: ' + persist_consent_cookie_id + ' to ' + grantScope.join(','));
             // All we need to do now is to redirect the user back to hydra!
             res.cookie(persist_consent_cookie_id, grantScope.join(','))
               // All we need to do now is to redirect the user back!
