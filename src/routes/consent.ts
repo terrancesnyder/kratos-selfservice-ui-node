@@ -247,6 +247,7 @@ export const createConsentRoute: RouteCreator =
             // and keep the client clean
             body.requested_scope = body.requested_scope ?? [];
             previous_scopes.forEach(x => {
+              if (x.trim().length <= 0) return;
               if (body.requested_scope!.indexOf(x) < 0) {
                 // requested scope add more
                 body.requested_scope?.push(x);
@@ -256,29 +257,23 @@ export const createConsentRoute: RouteCreator =
             // check and see what was previously added
             body.requested_scope?.forEach(x => {
               let id = x.trim();
-              scopes.push({
+              if (id.length <= 0) return;
+              scopes.push({ 
                 id: id,
                 label: lookupConsentScopeDefinition(id).label,  // TODO get nicer name and i18n translation
-                checked: previous_scopes.has(id),
                 defaultChecked: previous_scopes.has(id),
-                disabled: false,
-                previousChecked: previous_scopes.has(id),
-                description: lookupConsentScopeDefinition(id).description,
-                hidden: lookupConsentScopeDefinition(id).hidden
+                description: lookupConsentScopeDefinition(id).description
               });
             });
           } else {
             body.requested_scope?.forEach(x => {
               let id = x.trim();
+              if (id.length <= 0) return;
               scopes.push({
                 id: id,
                 label: lookupConsentScopeDefinition(id).label,  // TODO get nicer name and i18n translation
-                checked: false,
                 defaultChecked: false,
-                disabled: false,
-                previousChecked: false,
-                description: lookupConsentScopeDefinition(id).description,
-                hidden: lookupConsentScopeDefinition(id).hidden
+                description: lookupConsentScopeDefinition(id).description
               });
             });            
           }
