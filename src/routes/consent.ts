@@ -169,6 +169,9 @@ async function createOAuth2ConsentRequestSession(
 // A simple express handler that shows the Hydra consent screen.
 export const createConsentRoute: RouteCreator =
   (createHelpers) => (req, res, next) => {
+
+    console.log('--- createConsentRoute');
+
     res.locals.projectName = "An application requests access to your data!"
 
     const { oauth2, identity } = createHelpers(req, res)
@@ -188,6 +191,8 @@ export const createConsentRoute: RouteCreator =
       trustedClients = String(process.env.TRUSTED_CLIENT_IDS).split(",")
     }
 
+    console.log('--- getOAuth2ConsentRequest');
+
     // This section processes consent requests and either shows the consent UI or
     // accepts the consent request right away if the user has given consent to this
     // app before
@@ -195,6 +200,8 @@ export const createConsentRoute: RouteCreator =
       .getOAuth2ConsentRequest({ consentChallenge: challenge })
       // This will be called if the HTTP request was successful
       .then(async ({ data: body }) => {
+
+        console.log('--- getOAuth2ConsentRequest done');
         
         var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
         var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
@@ -220,6 +227,8 @@ export const createConsentRoute: RouteCreator =
             identity,
           )
 
+          console.log('--- acceptOAuth2ConsentRequest');
+
           // Now it's time to grant the consent request. You could also deny the request if something went terribly wrong
           return oauth2
             .acceptOAuth2ConsentRequest({
@@ -238,6 +247,8 @@ export const createConsentRoute: RouteCreator =
               },
             })
             .then(({ data: body }) => {
+              console.log('--- acceptOAuth2ConsentRequest done');
+
               // All we need to do now is to redirect the user back to hydra!
               res.cookie(persist_consent_cookie_id, grantScope.join(','))
                  .redirect(String(body.redirect_to))
@@ -247,6 +258,7 @@ export const createConsentRoute: RouteCreator =
         let scopes: UserConsentScope[] = [];
         if (body.client?.client_id != null) {
           if (prior_consent_grants != undefined) {
+            console.log('--- prior_consent_grants');
 
             const previous_scopes = new Set<string>(prior_consent_grants.split(','));
 
@@ -292,6 +304,8 @@ export const createConsentRoute: RouteCreator =
         console.log(scopes);
         console.log('------------');
 
+        console.log('--- UserConsentCard');
+
         // If consent can't be skipped we MUST show the consent UI.
         res.render("consent", {
           card: UserConsentCard({
@@ -313,6 +327,9 @@ export const createConsentRoute: RouteCreator =
 
 export const createConsentPostRoute: RouteCreator =
   (createHelpers) => (req, res, next) => {
+
+    console.log('--- createConsentPostRoute');
+
     // The challenge is a hidden input field, so we have to retrieve it from the request body
     const challenge = req.body.consent_challenge
     const { oauth2, identity } = createHelpers(req, res)
@@ -330,6 +347,8 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
+            console.log('--- rejectOAuth2ConsentRequest');
+
             // All we need to do now is to redirect the browser back to hydra!
             res.redirect(String(body.redirect_to))
           })
@@ -352,11 +371,15 @@ export const createConsentPostRoute: RouteCreator =
     //   session.id_token.given_name = 'John'
     // }
 
+    console.log('--- getOAuth2ConsentRequest');
+
     // Let's fetch the consent request again to be able to set `grantAccessTokenAudience` properly.
     oauth2
       .getOAuth2ConsentRequest({ consentChallenge: challenge })
       // This will be called if the HTTP request was successful
       .then(async ({ data: body }) => {
+        console.log('--- getOAuth2ConsentRequest done..');
+
         const session = await createOAuth2ConsentRequestSession(
           grantScope,
           body,
