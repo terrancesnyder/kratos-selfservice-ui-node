@@ -121,8 +121,8 @@ async function createOAuth2ConsentRequestSession(
       access_token.phone = id_token.phone = identity.traits["phone"] || ""
     }
     if (grantScopes.indexOf("profile") > -1) {
-      access_token.given_name = id_token.given_name = identity.traits["name"]["first"] || ""
-      access_token.family_name = id_token.family_name = identity.traits["name"]["last"] || ""
+      access_token.given_name = id_token.given_name = identity.traits["name"]["given_name"] || ""
+      access_token.family_name = id_token.family_name = identity.traits["name"]["family_name"] || ""
       access_token.middle_name = id_token.middle_name = identity.traits["name"]["middle_name"] || ""
       access_token.nickname = id_token.nickname = identity.traits["name"]["nickname"] || ""
       access_token.preferred_username = id_token.preferred_username = identity.traits["name"]["preferred_username"] || ""
