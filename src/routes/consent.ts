@@ -133,10 +133,9 @@ async function createOAuth2ConsentRequestSession(
       access_token.email = id_token.email = identity.traits["email"] || ""
       
       // // extended information
-      // identity.metadata_public = identity['metadata_public'] || {};
       // access_token.locale = id_token.locale = identity.metadata_public["locale"] || '';
       // access_token.preferred_username = id_token.preferred_username = identity.metadata_public["preferred_username"] || '';
-      // access_token.picture = id_token.picture = identity.metadata_public["picture"] || '';
+      access_token.picture = id_token.picture = identity.metadata_public["picture"] || '';
       // access_token.gender = id_token.gender = identity.metadata_public["gender"] || '';
     }
     if (grantScopes.indexOf("email") > -1) {
