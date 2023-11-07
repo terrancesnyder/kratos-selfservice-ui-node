@@ -115,8 +115,7 @@ async function createOAuth2ConsentRequestSession(
 
     if (grantScopes.indexOf("email") > -1) {
       // Client may check email of user
-      access_token.email = id_token.email = identity.traits["email"] || ""
-      
+      access_token.email = id_token.email = identity.traits["email"] || ""      
     }
     if (grantScopes.indexOf("phone") > -1) {
       // Client may check phone number of user
@@ -127,20 +126,23 @@ async function createOAuth2ConsentRequestSession(
       access_token.family_name = id_token.family_name = identity.traits["name"]["family_name"] || ""
       access_token.middle_name = id_token.middle_name = identity.traits["name"]["middle_name"] || ""
       access_token.nickname = id_token.nickname = identity.traits["name"]["nickname"] || ""
-      access_token.preferred_username = id_token.preferred_username = identity.traits["name"]["preferred_username"] || ""
-      access_token.picture = id_token.picture = identity.traits["picture"] || ""
-      access_token.website = id_token.website = identity.traits["website"] || ""
-      access_token.gender = id_token.gender = identity.traits["gender"] || ""
-      access_token.birthdate = id_token.birthdate = identity.traits["birthdate"] || ""
-      access_token.zoneinfo = id_token.zoneinfo = identity.traits["zoneinfo"] || ""
-      access_token.locale = id_token.locale = identity.traits["locale"] || ""
-      access_token.updated_at = id_token.updated_at = identity.traits["updated_at"] || ""
       access_token.email = id_token.email = identity.traits["email"] || ""
+      
+      // extended information
+      access_token.locale = id_token.locale = identity.metadata_public['locale'] || '';
+      access_token.preferred_username = id_token.preferred_username = identity.metadata_public['preferred_username'] || '';
+      access_token.picture = id_token.picture = identity.metadata_public['picture'] || '';
+      access_token.gender = id_token.gender = identity.metadata_public['gender'] || '';
+
+      access_token.type = 'access_token';
+      id_token.type = 'id_token';
+    }
+    if (grantScopes.indexOf("gender") > -1) {
+      access_token.gender = id_token.gender = identity.metadata_public['gender'] || '';      
     }
     if (grantScopes.indexOf("email") > -1) {
       access_token.email = id_token.email = identity.traits["email"] || ""
     }
-
     if (grantScopes.indexOf("address") > -1) {
       access_token.address = id_token.address = identity.traits["address"] || ""
     }
