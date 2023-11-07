@@ -143,6 +143,12 @@ async function createOAuth2ConsentRequestSession(
       access_token.address = id_token.address = identity.traits["address"] || ""
     }
 
+    console.log('❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤');
+    console.log(JSON.stringify(identity, null, 4));
+    console.log('❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤');
+    console.log(JSON.stringify(access_token, null, 4));
+    console.log('❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤');  
+
     // could do scopes[], roles[]
   }
 
