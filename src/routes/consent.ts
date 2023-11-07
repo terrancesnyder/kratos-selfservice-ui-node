@@ -103,6 +103,8 @@ async function createOAuth2ConsentRequestSession(
 ): Promise<AcceptOAuth2ConsentRequestSession> {
   // The session allows us to set session data for id and access tokens
 
+  console.log('Creating Session');
+
   const id_token: { [key: string]: any } = {}
   const access_token: { [key: string]: any } = {}
 
@@ -282,6 +284,8 @@ export const createConsentRoute: RouteCreator =
           }
         }
 
+        console.log('------------');
+        console.log(' SCOPES SCOPES SCOPES');
         console.log('------------');
         console.log(scopes);
         console.log('------------');
