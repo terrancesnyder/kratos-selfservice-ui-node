@@ -204,7 +204,7 @@ export const createConsentRoute: RouteCreator =
         console.log('--- getOAuth2ConsentRequest done');
         
         var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
-        var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
+        var prior_consent_grants = null;//req.cookies[persist_consent_cookie_id] || '';
 
         // If a user has granted this application the requested scope, hydra will tell us to not show the UI.
         if (
@@ -257,10 +257,10 @@ export const createConsentRoute: RouteCreator =
 
         let scopes: UserConsentScope[] = [];
         if (body.client?.client_id != null) {
-          if (prior_consent_grants != undefined) {
+          if ((prior_consent_grants || '').trim().length > 0) {
             console.log('--- prior_consent_grants');
 
-            const previous_scopes = new Set<string>(prior_consent_grants.split(','));
+            const previous_scopes = new Set<string>((prior_consent_grants || '').split(','));
 
             // requested scope and items from before just to keep state 
             // and keep the client clean
@@ -387,7 +387,7 @@ export const createConsentPostRoute: RouteCreator =
         )
 
         var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
-        var prior_consent_grants = req.cookies[persist_consent_cookie_id] || '';
+        var prior_consent_grants = null; // req.cookies[persist_consent_cookie_id] || '';
 
         return oauth2
           .acceptOAuth2ConsentRequest({
