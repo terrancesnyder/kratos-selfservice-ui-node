@@ -137,7 +137,7 @@ async function createOAuth2ConsentRequestSession(
       let m = (identity?.metadata_public as any);
       // access_token.locale = id_token.locale = identity?.metadata_public?.locale;
       // access_token.preferred_username = id_token.preferred_username = identity.metadata_public?['preferred_username'] : '';
-      if (m.picture != null) {
+      if (m != null && m.picture != null) {
         access_token.picture = id_token.picture = m.picture;
       }
       // access_token.gender = id_token.gender = identity.metadata_public?['gender'] : '';
