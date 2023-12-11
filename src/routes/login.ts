@@ -37,6 +37,8 @@ export const createLoginRoute: RouteCreator =
       return_to: return_to.toString(),
     })
 
+    console.log('----- return to ----> ' + return_to);
+
     if (isQuerySet(login_challenge)) {
       console.log('Login challenge: ' + login_challenge);
       logger.debug("login_challenge found in URL query: ", { query: req.query })
@@ -132,6 +134,9 @@ export const createLoginRoute: RouteCreator =
         console.log('frontend login flow: ' + flow)
         console.log('----------------')
         console.log(flow)
+        var redirect_to = decodeURIComponent(flow.oauth2_login_request.request_url);
+        console.log('----------------')
+        console.log(redirect_to)
         console.log('----------------')
 
         if (flow.ui.messages && flow.ui.messages.length > 0) {
