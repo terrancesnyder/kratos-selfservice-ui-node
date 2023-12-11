@@ -38,6 +38,7 @@ export const createLoginRoute: RouteCreator =
     })
 
     if (isQuerySet(login_challenge)) {
+      console.log('Login challenge: ' + login_challenge);
       logger.debug("login_challenge found in URL query: ", { query: req.query })
       initFlowQuery.append("login_challenge", login_challenge)
     }
@@ -128,12 +129,16 @@ export const createLoginRoute: RouteCreator =
     return frontend
       .getLoginFlow({ id: flow, cookie: req.header("cookie") })
       .then(async ({ data: flow }) => {
-        console.log('frontend login flow')
+        console.log('frontend login flow: ' + flow)
+        console.log('----------------')
+        console.log(flow)
+        console.log('----------------')
 
         if (flow.ui.messages && flow.ui.messages.length > 0) {
           // the login requires that the user verifies their email address before logging in
           if (flow.ui.messages.some(({ id }) => id === 4000010)) {
             // we will create a new verification flow and redirect the user to the verification page
+            console.log('redirectToVerificationFlow')
             return redirectToVerificationFlow(flow)
           }
         }
@@ -144,6 +149,7 @@ export const createLoginRoute: RouteCreator =
             (return_to && return_to.toString()) || flow.return_to || "",
         })
         if (flow.oauth2_login_request?.challenge) {
+          console.log('oauth2_login_request')
           initRegistrationQuery.set(
             "login_challenge",
             flow.oauth2_login_request.challenge,
@@ -157,6 +163,7 @@ export const createLoginRoute: RouteCreator =
           initRegistrationQuery,
         )
         if (!flow.refresh) {
+          console.log('initRegistrationUrl')
           initRecoveryUrl = getUrlForFlow(
             kratosBrowserUrl,
             "recovery",
