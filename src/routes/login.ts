@@ -44,12 +44,15 @@ export const createLoginRoute: RouteCreator =
 
     const initFlowUrl = getUrlForFlow(kratosBrowserUrl, "login", initFlowQuery)
 
+    console.log('--- URL Flow: ' + initFlowUrl)
+
     // The flow is used to identify the settings and registration flow and
     // return data like the csrf_token and so on.
     if (!isQuerySet(flow)) {
       logger.debug("No flow ID found in URL query initializing login flow", {
         query: req.query,
       })
+      console.log('No flow ID found in URL query initializing login flow')
       res.redirect(303, initFlowUrl)
       return
     }
@@ -125,6 +128,8 @@ export const createLoginRoute: RouteCreator =
     return frontend
       .getLoginFlow({ id: flow, cookie: req.header("cookie") })
       .then(async ({ data: flow }) => {
+        console.log('frontend login flow')
+
         if (flow.ui.messages && flow.ui.messages.length > 0) {
           // the login requires that the user verifies their email address before logging in
           if (flow.ui.messages.some(({ id }) => id === 4000010)) {

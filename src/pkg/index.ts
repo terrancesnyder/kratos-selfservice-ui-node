@@ -54,7 +54,10 @@ const isErrorAuthenticatorAssuranceLevel = (
 export const redirectOnSoftError =
   (res: Response, next: NextFunction, redirectTo: string) =>
   (err: AxiosError) => {
+    console.log('redirectOnSoftError')
+
     if (!err.response) {
+      console.log('err')
       next(err)
       return
     }
@@ -64,6 +67,8 @@ export const redirectOnSoftError =
       err.response.status === 410 ||
       err.response.status === 403
     ) {
+      console.log('err...' + err.response.status)
+
       // in some cases Kratos will require us to redirect to a different page when the session_aal2_required
       // for example, when recovery redirects us to settings
       // but settings requires us to redirect to login?aal=aal2
