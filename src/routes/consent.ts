@@ -140,6 +140,16 @@ async function createOAuth2ConsentRequestSession(
       if (m != null && m.picture != null) {
         access_token.picture = id_token.picture = m.picture;
       }
+      if (m != null && m.avatar != null) {
+        access_token.avatar = id_token.avatar = m.avatar;
+      }
+      if (m != null && m.photo != null) {
+        access_token.photo = id_token.photo = m.photo;
+        access_token.picture = id_token.picture = m.photo;
+      }
+      if (m != null && m.locale != null) {
+        access_token.locale = id_token.locale = m.locale;
+      }
       // access_token.gender = id_token.gender = identity.metadata_public?['gender'] : '';
     }
     if (grantScopes.indexOf("email") > -1) {
