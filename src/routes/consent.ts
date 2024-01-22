@@ -446,13 +446,10 @@ export const createConsentPostRoute: RouteCreator =
             // which application got what consent
             var audit = {
               scopes: grantScope,
-              redirect: oauthResponse.redirect_to,
-              client_id: body.client?.client_id,
+              response: oauthResponse,
+              body: body,
               identity: identity,
-              remember: Boolean(req.body.remember),
-              remember_for: process.env.REMEMBER_CONSENT_FOR_SECONDS
-              ? Number(process.env.REMEMBER_CONSENT_SESSION_FOR_SECONDS)
-              : 3600
+              session: session
             };
 
             console.log('Audit --> ' + JSON.stringify(audit));
