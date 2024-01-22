@@ -440,13 +440,13 @@ export const createConsentPostRoute: RouteCreator =
                 : 3600,
             },
           })
-          .then(({ data: body }) => {
+          .then(({ data: oauthResponse }) => {
 
             // save and persist to consent API
             // which application got what consent
             var audit = {
               scopes: grantScope,
-              redirect: body.redirect_to,
+              redirect: oauthResponse.redirect_to,
               client_id: body.client?.client_id,
               identity: identity,
               remember: Boolean(req.body.remember),
@@ -468,7 +468,7 @@ export const createConsentPostRoute: RouteCreator =
             // All we need to do now is to redirect the user back to hydra!
             res.cookie(persist_consent_cookie_id, grantScope.join(','))
               // All we need to do now is to redirect the user back!
-              .redirect(String(body.redirect_to))
+              .redirect(String(oauthResponse.redirect_to))
           })
       })
       .catch(next)
