@@ -16,12 +16,18 @@ import { register404Route } from "./404"
 import { oidcConformityMaybeFakeSession } from "./stub/oidc-cert"
 import { describe } from "node:test"
 import { emit } from "node:process"
+import axios from 'axios';
 
 type ConsentScopeDefinition = {
   label: string
   description?: string
   hidden?: boolean
 }
+
+const consentAuditEndpoint = axios.create({
+  baseURL: 'https://kong-gateway.klustr.io',
+  headers: {'apikey': 'my_private_key'}
+});
 
 function lookupConsentScopeDefinition(id: string) : ConsentScopeDefinition {
 
@@ -435,6 +441,30 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
+
+            // save and persist to consent API
+            // which application got what consent
+            var audit = {
+              scopes: grantScope,
+              redirect: body.redirect_to,
+              client_id: body.client?.client_id,
+              identity: identity,
+              remember: Boolean(req.body.remember),
+              remember_for: process.env.REMEMBER_CONSENT_FOR_SECONDS
+              ? Number(process.env.REMEMBER_CONSENT_SESSION_FOR_SECONDS)
+              : 3600
+            };
+
+            console.log('Audit --> ' + JSON.stringify(audit));
+            
+            consentAuditEndpoint.post('/consent/audit', audit)
+              .then(() => {
+                console.log('Done');
+              })
+              .catch(() => {
+                console.log("Error when calling consent");
+              });
+
             // All we need to do now is to redirect the user back to hydra!
             res.cookie(persist_consent_cookie_id, grantScope.join(','))
               // All we need to do now is to redirect the user back!
