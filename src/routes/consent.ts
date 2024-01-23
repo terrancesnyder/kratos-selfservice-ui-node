@@ -445,16 +445,15 @@ export const createConsentPostRoute: RouteCreator =
             // save and persist to consent API
             // which application got what consent
             var audit = {
-              scopes: grantScope,
-              response: oauthResponse,
-              body: body,
-              identity: identity,
-              session: session
+              subject: body.subject,
+              approved_scopes: grantScope,
+              session: session,
+              request: body,
             };
 
             console.log('Audit --> ' + JSON.stringify(audit));
             
-            consentAuditEndpoint.post('/consent/audit', audit)
+            consentAuditEndpoint.post('/consent/audit/ory', audit)
               .then(() => {
                 console.log('Done');
               })
