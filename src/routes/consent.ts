@@ -29,6 +29,7 @@ const consentAuditEndpoint = axios.create({
   headers: {'apikey': 'my_private_key'}
 });
 
+
 function lookupConsentScopeDefinition(id: string) : ConsentScopeDefinition {
 
   if (id == "email") {
@@ -109,7 +110,6 @@ async function createOAuth2ConsentRequestSession(
 ): Promise<AcceptOAuth2ConsentRequestSession> {
   // The session allows us to set session data for id and access tokens
 
-  console.log('Creating Session');
 
   const id_token: { [key: string]: any } = {}
   const access_token: { [key: string]: any } = {}
@@ -165,11 +165,6 @@ async function createOAuth2ConsentRequestSession(
       access_token.address = id_token.address = identity.traits["address"] || ""
     }
 
-    console.log('❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤');
-    console.log(JSON.stringify(identity, null, 4));
-    console.log('❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤');
-    console.log(JSON.stringify(access_token, null, 4));
-    console.log('❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤❤');  
 
     // could do scopes[], roles[]
   }
@@ -188,7 +183,6 @@ async function createOAuth2ConsentRequestSession(
 export const createConsentRoute: RouteCreator =
   (createHelpers) => (req, res, next) => {
 
-    console.log('--- createConsentRoute');
 
     res.locals.projectName = "An application requests access to your data!"
 
@@ -209,7 +203,6 @@ export const createConsentRoute: RouteCreator =
       trustedClients = String(process.env.TRUSTED_CLIENT_IDS).split(",")
     }
 
-    console.log('--- getOAuth2ConsentRequest');
 
     // This section processes consent requests and either shows the consent UI or
     // accepts the consent request right away if the user has given consent to this
@@ -219,7 +212,6 @@ export const createConsentRoute: RouteCreator =
       // This will be called if the HTTP request was successful
       .then(async ({ data: body }) => {
 
-        console.log('--- getOAuth2ConsentRequest done');
         
         var persist_consent_cookie_id = 'consent_' + body.client?.client_id;
         var prior_consent_grants = null;//req.cookies[persist_consent_cookie_id] || '';
@@ -245,7 +237,6 @@ export const createConsentRoute: RouteCreator =
             identity,
           )
 
-          console.log('--- acceptOAuth2ConsentRequest');
 
           // Now it's time to grant the consent request. You could also deny the request if something went terribly wrong
           return oauth2
@@ -265,7 +256,6 @@ export const createConsentRoute: RouteCreator =
               },
             })
             .then(({ data: body }) => {
-              console.log('--- acceptOAuth2ConsentRequest done');
 
               // All we need to do now is to redirect the user back to hydra!
               res.cookie(persist_consent_cookie_id, grantScope.join(','))
@@ -276,7 +266,6 @@ export const createConsentRoute: RouteCreator =
         let scopes: UserConsentScope[] = [];
         if (body.client?.client_id != null) {
           if ((prior_consent_grants || '').trim().length > 0) {
-            console.log('--- prior_consent_grants');
 
             const previous_scopes = new Set<string>((prior_consent_grants || '').split(','));
 
@@ -316,13 +305,7 @@ export const createConsentRoute: RouteCreator =
           }
         }
 
-        console.log('------------');
-        console.log(' SCOPES SCOPES SCOPES');
-        console.log('------------');
-        console.log(scopes);
-        console.log('------------');
 
-        console.log('--- UserConsentCard');
 
         // If consent can't be skipped we MUST show the consent UI.
         res.render("consent", {
@@ -346,7 +329,6 @@ export const createConsentRoute: RouteCreator =
 export const createConsentPostRoute: RouteCreator =
   (createHelpers) => (req, res, next) => {
 
-    console.log('--- createConsentPostRoute');
 
     // The challenge is a hidden input field, so we have to retrieve it from the request body
     const challenge = req.body.consent_challenge
@@ -365,7 +347,6 @@ export const createConsentPostRoute: RouteCreator =
             },
           })
           .then(({ data: body }) => {
-            console.log('--- rejectOAuth2ConsentRequest');
 
             // All we need to do now is to redirect the browser back to hydra!
             res.redirect(String(body.redirect_to))
@@ -380,23 +361,12 @@ export const createConsentPostRoute: RouteCreator =
       grantScope = [grantScope]
     }
 
-    // split these up
-
-    // Here is also the place to add data to the ID or access token. For example,
-    // if the scope 'profile' is added, add the family and given name to the ID Token claims:
-    // if (grantScope.indexOf('profile')) {
-    //   session.id_token.family_name = 'Doe'
-    //   session.id_token.given_name = 'John'
-    // }
-
-    console.log('--- getOAuth2ConsentRequest');
 
     // Let's fetch the consent request again to be able to set `grantAccessTokenAudience` properly.
     oauth2
       .getOAuth2ConsentRequest({ consentChallenge: challenge })
       // This will be called if the HTTP request was successful
       .then(async ({ data: body }) => {
-        console.log('--- getOAuth2ConsentRequest done..');
 
         const session = await createOAuth2ConsentRequestSession(
           grantScope,
@@ -451,14 +421,13 @@ export const createConsentPostRoute: RouteCreator =
               request: body,
             };
 
-            console.log('Audit --> ' + JSON.stringify(audit));
             
             consentAuditEndpoint.post('/consent/audit/ory', audit)
               .then(() => {
-                console.log('Done');
+                console.log('Updated consent history.')
               })
               .catch(() => {
-                console.log("Error when calling consent");
+                console.log('Failed to update consent history.')
               });
 
             // All we need to do now is to redirect the user back to hydra!
